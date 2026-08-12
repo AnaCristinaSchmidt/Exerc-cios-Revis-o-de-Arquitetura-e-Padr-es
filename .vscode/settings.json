@@ -1,0 +1,5 @@
+{
+    "java.compile.nullAnalysis.mode": "automatic",
+    "boot-java.live-information.automatic-connection.on": false,
+    "java.configuration.updateBuildConfiguration": "interactive"
+}
