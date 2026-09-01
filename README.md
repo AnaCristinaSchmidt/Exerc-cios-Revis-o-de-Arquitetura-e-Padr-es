@@ -66,6 +66,51 @@ classDiagram
   Produto --> CategoriaProduto
 ```
 
+## Persistência e API REST
+
+A segunda etapa do exercício acrescenta a camada de persistência (Spring Data JPA) e a
+camada web (Spring MVC), sem alterar as regras já implementadas na camada de negócios:
+
+- **Entidades JPA:** `Produto` e `Usuario` (pacote `negocio.modelo`) passaram de `record`
+para classes anotadas com `@Entity`, pois o JPA precisa de um construtor vazio e de
+instâncias mutáveis para gerenciar o ciclo de vida dos objetos persistidos. As mesmas
+classes recebem também as anotações do Bean/Spring Validation (`@NotBlank`, `@Min`,
+`@DecimalMin`, `@Past`, etc.), reaproveitadas tanto para validar antes de persistir quanto
+para validar o corpo das requisições REST.
+- **Repositórios:** `ProdutoRepository` e `UsuarioRepository` (pacote `persistencia`)
+estendem `JpaRepository`, dispensando implementação manual de CRUD.
+- **Adapters:** `ConsultaProdutoJpaAdapter` e `ConsultaUsuarioJpaAdapter` (pacote
+`persistencia`) implementam as portas de saída `ConsultaProduto`/`ConsultaUsuario` que já
+existiam na camada de negócios, delegando aos repositórios. Isso mantém a arquitetura de
+Ports and Adapters: o domínio continua sem depender do Spring Data.
+- **Banco de dados:** H2 em memória (`spring.datasource.url=jdbc:h2:mem:sbornia`), configurado
+em `src/main/resources/application.properties`. As tabelas são geradas automaticamente a
+partir das entidades (`spring.jpa.hibernate.ddl-auto=update`).
+- **Camada REST (pacote `web`):**
+  - `POST /api/produtos`, `GET /api/produtos`, `GET /api/produtos/{codigo}`,
+  `DELETE /api/produtos/{codigo}`
+  - `POST /api/usuarios`, `GET /api/usuarios`, `GET /api/usuarios/{id}`,
+  `DELETE /api/usuarios/{id}`
+  - `POST /api/vendas` — recebe `{ "codigoProduto", "idUsuario", "quantidade" }`
+  (validado via `@Valid`) e delega para `CalculoVendaCadastrada`, retornando o
+  `ResultadoVenda` calculado pela camada de negócios já existente.
+  - `TratadorDeErros` (`@RestControllerAdvice`) converte erros de validação (400 com a
+  lista de campos inválidos), regras de negócio violadas (400) e registros não
+  encontrados (404) em respostas JSON padronizadas.
+
+### Exemplo de uso
+
+```bash
+curl -X POST http://localhost:8080/api/produtos -H "Content-Type: application/json" -d \
+  '{"codigo":"P1","descricao":"Arroz","quantidadeEmEstoque":100,"precoUnitario":10.00,"categoria":"ALIMENTICIO"}'
+
+curl -X POST http://localhost:8080/api/usuarios -H "Content-Type: application/json" -d \
+  '{"id":"U1","nome":"Maria","dataNascimento":"1990-01-01","numeroDependentes":0}'
+
+curl -X POST http://localhost:8080/api/vendas -H "Content-Type: application/json" -d \
+  '{"codigoProduto":"P1","idUsuario":"U1","quantidade":2}'
+```
+
 ## Executar
 
 ```bash
@@ -73,5 +118,5 @@ classDiagram
 ./mvnw spring-boot:run
 ```
 
-Não existe endpoint web neste escopo; ao iniciar, a aplicação apenas carrega os beans da
-camada de negócios.
+O console do H2 fica disponível em `http://localhost:8080/h2-console`
+(JDBC URL: `jdbc:h2:mem:sbornia`, usuário `sa`, senha em branco).

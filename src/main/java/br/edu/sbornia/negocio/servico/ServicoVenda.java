@@ -18,9 +18,9 @@ public final class ServicoVenda implements CalculoVenda {
     @Override
     public ResultadoVenda calcular(Produto produto, Usuario usuario, int quantidade) {
         if (quantidade <= 0) throw new IllegalArgumentException("Quantidade deve ser maior que zero");
-        if (quantidade > produto.quantidadeEmEstoque()) throw new IllegalArgumentException("Estoque insuficiente");
+        if (quantidade > produto.getQuantidadeEmEstoque()) throw new IllegalArgumentException("Estoque insuficiente");
 
-        BigDecimal subtotal = produto.precoUnitario().multiply(BigDecimal.valueOf(quantidade));
+        BigDecimal subtotal = produto.getPrecoUnitario().multiply(BigDecimal.valueOf(quantidade));
         BigDecimal imposto = calculadoraImposto.calcular(produto, usuario, subtotal);
         return new ResultadoVenda(moeda(subtotal), moeda(imposto), moeda(subtotal.add(imposto)));
     }
