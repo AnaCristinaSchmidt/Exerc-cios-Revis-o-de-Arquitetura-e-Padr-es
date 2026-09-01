@@ -24,9 +24,9 @@ public final class CalculadoraImposto {
                 .orElseThrow(() -> new IllegalArgumentException("Não há política de imposto para a categoria"));
 
         BigDecimal imposto = subtotal.multiply(politica.aliquota());
-        if (produto.categoria() == CategoriaProduto.BEBIDA_ALCOOLICA) return imposto;
+        if (produto.getCategoria() == CategoriaProduto.BEBIDA_ALCOOLICA) return imposto;
         if (usuario.idade(clock) > 60) return BigDecimal.ZERO;
-        if (usuario.numeroDependentes() > 3) return imposto.multiply(METADE);
+        if (usuario.getNumeroDependentes() > 3) return imposto.multiply(METADE);
         return imposto;
     }
 }

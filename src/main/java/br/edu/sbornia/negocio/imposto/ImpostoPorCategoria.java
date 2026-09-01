@@ -15,6 +15,6 @@ public final class ImpostoPorCategoria implements PoliticaImposto {
         if (aliquota.signum() < 0) throw new IllegalArgumentException("Alíquota não pode ser negativa");
     }
 
-    @Override public boolean aplicaA(Produto produto) { return produto.categoria() == categoria; }
+    @Override public boolean aplicaA(Produto produto) { return produto.getCategoria() == categoria; }
     @Override public BigDecimal aliquota() { return aliquota; }
 }
