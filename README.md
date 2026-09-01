@@ -65,6 +65,62 @@ classDiagram
   ImpostoPorCategoria ..|> PoliticaImposto
   Produto --> CategoriaProduto
 ```
+## Diagrama de camadas (persistência e REST)
+
+O diagrama abaixo mostra como a camada de persistência e a camada REST, adicionadas nesta
+etapa, se conectam à camada de negócios sem alterá-la: os controllers dependem das portas
+de entrada (`CalculoVenda`, `CalculoVendaCadastrada`) e os adapters de persistência
+implementam as portas de saída (`ConsultaProduto`, `ConsultaUsuario`) que já existiam.
+
+```mermaid
+classDiagram
+  class VendaController { +vender(VendaRequest) ResultadoVenda }
+  class ProdutoController { +listar() +buscar(String) +cadastrar(Produto) +remover(String) }
+  class UsuarioController { +listar() +buscar(String) +cadastrar(Usuario) +remover(String) }
+  class TratadorDeErros { +tratarValidacao() +tratarRegraDeNegocio() +tratarNaoEncontrado() }
+  class VendaRequest { +codigoProduto String +idUsuario String +quantidade int }
+
+  class CalculoVendaCadastrada { <<interface>> }
+  class CalculoVenda { <<interface>> }
+  class ConsultaProduto { <<interface>> }
+  class ConsultaUsuario { <<interface>> }
+
+  class ConsultaProdutoJpaAdapter { +buscarPorCodigo(String) Optional~Produto~ }
+  class ConsultaUsuarioJpaAdapter { +buscarPorId(String) Optional~Usuario~ }
+  class ProdutoRepository { <<interface>> }
+  class UsuarioRepository { <<interface>> }
+
+  VendaController --> CalculoVendaCadastrada
+  VendaController --> VendaRequest
+  ProdutoController --> ProdutoRepository
+  UsuarioController --> UsuarioRepository
+
+  ConsultaProdutoJpaAdapter ..|> ConsultaProduto
+  ConsultaUsuarioJpaAdapter ..|> ConsultaUsuario
+  ConsultaProdutoJpaAdapter --> ProdutoRepository
+  ConsultaUsuarioJpaAdapter --> UsuarioRepository
+  ProdutoRepository --|> JpaRepository
+  UsuarioRepository --|> JpaRepository
+
+  class JpaRepository { <<interface>> }
+```
+
+Em resumo, o fluxo de uma venda é:
+
+```mermaid
+flowchart LR
+  A[Cliente HTTP] -->|POST /api/vendas| B[VendaController]
+  B --> C[ServicoVendaCadastrada]
+  C --> D[ConsultaProdutoJpaAdapter]
+  C --> E[ConsultaUsuarioJpaAdapter]
+  D --> F[(Banco H2)]
+  E --> F
+  C --> G[ServicoVenda]
+  G --> H[CalculadoraImposto]
+  C --> I[ResultadoVenda]
+  I --> B
+  B -->|JSON| A
+```
 
 ## Persistência e API REST
 
